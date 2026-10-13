@@ -1,0 +1,47 @@
+
+import base64
+import json
+from openai import OpenAI
+
+client = OpenAI()
+
+image_path = input("Enter receipt image path: ")
+
+with open(image_path, "rb") as f:
+    image_data = base64.b64encode(f.read()).decode("utf-8")
+
+prompt = """
+Analyze this restaurant receipt image.
+Extract the following details:
+- Restaurant Name
+- Date
+- Items Ordered (list)
+- Subtotal
+- Tax
+- Total
+
+Return only a valid JSON object.
+If any information is missing, use null.
+"""
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{image_data}"
+                    }
+                }
+            ]
+        }
+    ],
+    max_tokens=500
+)
+
+result = response.choices[0].message.content
+print(json.dumps(json.loads(result), indent=4))
